@@ -224,9 +224,9 @@ void exampleTest(MuseumJson createdMuseum) { ... }
 
 @Test
 @DisplayName("...")
-@GeneratePainting
-@GenerateMuseum
-@GenerateArtist
+@TestPainting
+@TestMuseum
+@TestArtist
 @Tag("...")
 void exampleTest2(PaintingJson createdPainting, MuseumJson createdMuseum, ArtistJson createdArtist) { ... }
 ```
