@@ -1,8 +1,8 @@
 const BASE_URL = `${import.meta.env.VITE_AUTH_URL}`;
 
 export const authClient = {
-    getToken: async(data: URLSearchParams) => {
-        const response = await fetch(`${BASE_URL}/oauth2/token`, {
+    getToken: async(url: string, data: URLSearchParams) => {
+        const response = await fetch(`${BASE_URL}/${url}`, {
             method: "POST",
             credentials: "include",
             headers: {
@@ -29,4 +29,3 @@ export const authClient = {
         }
     }
 }
-

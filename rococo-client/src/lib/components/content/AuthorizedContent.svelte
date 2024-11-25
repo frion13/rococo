@@ -30,8 +30,8 @@
             }
         });
         if (code && verifier) {
-            const body = getTokenFromUrlEncodedParams(code, verifier);
-            const res = await authClient.getToken(body);
+            const data = getTokenFromUrlEncodedParams(code, verifier);
+            const res = await authClient.getToken("oauth2/token", data);
             if (res?.id_token) {
                 localStorage.setItem("id_token", res.id_token);
                 setTimeout(async () => {
