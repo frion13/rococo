@@ -18,7 +18,7 @@ const generateCodeChallenge = () => {
 }
 
 const getAuthLink = (codeChallenge: string) => {
-    return `${import.meta.env.VITE_AUTH_URL}/oauth2/authorize?response_type=$code&client_id=${import.meta.env.VITE_CLIENT_ID}&scope=openid&redirect_uri=${import.meta.env.VITE_FRONT_URL}/authorized&code_challenge=${codeChallenge}&code_challenge_method=S256`
+    return `${import.meta.env.VITE_AUTH_URL}/oauth2/authorize?response_type=code&client_id=${import.meta.env.VITE_CLIENT_ID}&scope=openid&redirect_uri=${import.meta.env.VITE_FRONT_URL}/authorized&code_challenge=${codeChallenge}&code_challenge_method=S256`
 }
 
 const getTokenFromUrlEncodedParams = (code: string, verifier: string) => {
