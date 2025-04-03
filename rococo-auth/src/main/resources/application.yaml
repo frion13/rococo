@@ -2,6 +2,14 @@ server:
   port: 9000
 
 spring:
+  config:
+    activate:
+      on-profile: 'local'
+  autoconfigure:
+    exclude:
+      - 'org.springframework.cloud.vault.config.VaultAutoConfiguration'
+      - 'org.springframework.cloud.vault.config.VaultObservationAutoConfiguration'
+      - 'org.springframework.cloud.vault.config.VaultReactiveAutoConfiguration'
   application:
     name: rococo-auth
   mvc:
@@ -48,3 +56,5 @@ rococo-front:
   base-uri: 'http://127.0.0.1:3000'
 rococo-auth:
   base-uri: 'http://127.0.0.1:9000'
+oauth2:
+  client-id: 'client'
