@@ -1,0 +1,274 @@
+services:
+  rococo-all-db:
+    container_name: rococo-all-db
+    image: mysql:8.3
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-u", "root", "-psecret" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    networks:
+      - rococo-network
+
+  zookeeper:
+    container_name: zookeeper
+    image: confluentinc/cp-zookeeper:7.3.2
+    ports:
+      - 2181:2181
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    restart: unless-stopped
+    networks:
+      - rococo-network
+
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka:7.3.2
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    depends_on:
+      zookeeper:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z kafka 9092 || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rococo-network
+
+  auth.rococo.dc:
+    container_name: auth.rococo.dc
+    image: ${PREFIX}/rococo-auth-docker:latest
+    pull_policy: always
+    ports:
+      - 9000:9000
+    healthcheck:
+      test: "wget --spider http://localhost:9000/actuator/health || exit 1"
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: always
+    depends_on:
+      rococo-all-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - rococo-network
+
+  artist.rococo.dc:
+    container_name: artist.rococo.dc
+    image: ${PREFIX}/rococo-artist-docker:latest
+    pull_policy: always
+    ports:
+      - 8092:8092
+    restart: always
+    depends_on:
+      auth.rococo.dc:
+        condition: service_healthy
+    networks:
+      - rococo-network
+
+  museum.rococo.dc:
+    container_name: museum.rococo.dc
+    image: ${PREFIX}/rococo-museum-docker:latest
+    pull_policy: always
+    ports:
+      - 8093:8093
+    restart: always
+    depends_on:
+      auth.rococo.dc:
+        condition: service_healthy
+    networks:
+      - rococo-network
+
+  geo.rococo.dc:
+    container_name: geo.rococo.dc
+    image: ${PREFIX}/rococo-geo-docker:latest
+    pull_policy: always
+    ports:
+      - 8094:8094
+    restart: always
+    depends_on:
+      auth.rococo.dc:
+        condition: service_healthy
+    networks:
+      - rococo-network
+
+  painting.rococo.dc:
+    container_name: painting.rococo.dc
+    image: ${PREFIX}/rococo-painting-docker:latest
+    pull_policy: always
+    ports:
+      - 8095:8095
+    restart: always
+    depends_on:
+      auth.rococo.dc:
+        condition: service_healthy
+    networks:
+      - rococo-network
+
+  userdata.rococo.dc:
+    container_name: userdata.rococo.dc
+    image: ${PREFIX}/rococo-userdata-docker:latest
+    pull_policy: always
+    ports:
+      - 8091:8091
+    restart: always
+    healthcheck:
+      test: "wget --spider http://localhost:9090/actuator/health || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      auth.rococo.dc:
+        condition: service_healthy
+    networks:
+      - rococo-network
+
+  gateway.rococo.dc:
+    container_name: gateway.rococo.dc
+    image: ${PREFIX}/rococo-gateway-docker:latest
+    pull_policy: always
+    ports:
+      - 8090:8090
+    healthcheck:
+      test: "wget --spider http://localhost:8080/actuator/health || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: always
+    depends_on:
+      auth.rococo.dc:
+        condition: service_healthy
+      userdata.rococo.dc:
+        condition: service_healthy
+    networks:
+      - rococo-network
+
+  frontend.rococo.dc:
+    container_name: frontend.rococo.dc
+    image: ${PREFIX}/rococo-client-docker:latest
+    build:
+      context: ./rococo-client
+      dockerfile: Dockerfile
+      args:
+        NPM_COMMAND: build:docker
+        VERSION: 0.0.1
+    pull_policy: always
+    ports:
+      - 80:80
+    restart: always
+    networks:
+      - rococo-network
+
+  rococo-e2e-tests:
+    profiles: [ test ]
+    container_name: rococo-e2e-tests
+    image: ${PREFIX}/rococo-e2e-tests-docker:latest
+    build:
+      context: ./
+      dockerfile: ./rococo-e2e-tests/Dockerfile
+    environment:
+      - ALLURE_DOCKER_API=${ALLURE_DOCKER_API}
+      - BUILD_URL=${BUILD_URL}
+      - HEAD_COMMIT_MESSAGE=${HEAD_COMMIT_MESSAGE}
+      - EXECUTION_TYPE=${EXECUTION_TYPE}
+      - BROWSER=${BROWSER}
+    volumes:
+      - allure-results:/rococo/rococo-e2e-tests/build/allure-results
+    depends_on:
+      frontend.rococo.dc:
+        condition: service_started
+      selenoid:
+        condition: service_started
+      allure:
+        condition: service_started
+    networks:
+      - rococo-network
+
+  selenoid:
+    profiles:
+      - test
+    container_name: selenoid
+    image: aerokube/selenoid:1.11.3
+    platform: linux/${ARCH}
+    volumes:
+      - ./selenoid:/etc/selenoid
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Europe/Moscow
+    restart: unless-stopped
+    command: [ "-conf", "/etc/selenoid/browsers.json", "-limit", "3", "-video-output-dir", "/opt/selenoid/video", "-log-output-dir", "/opt/selenoid/logs", "-container-network", "rococo_rococo-network" ]
+    ports:
+      - 4444:4444
+    networks:
+      - rococo-network
+
+  selenoid-ui:
+    profiles:
+      - test
+    container_name: selenoid-ui
+    image: aerokube/selenoid-ui:1.10.11
+    depends_on:
+      - selenoid
+    restart: unless-stopped
+    ports:
+      - 9095:8081
+    command: [ "--selenoid-uri", "http://selenoid:4444" ]
+    networks:
+      - rococo-network
+
+  allure:
+    profiles: [ test ]
+    container_name: allure
+    image: frankescobar/allure-docker-service:2.27.0
+    environment:
+      - CHECK_RESULTS_EVERY_SECONDS=NONE
+      - KEEP_HISTORY=1
+    volumes:
+      - allure-results:/app/allure-results
+    ports:
+      - 5050:5050
+    networks:
+      - rococo-network
+
+  allure-ui:
+    profiles: [ test ]
+    container_name: allure-ui
+    image: frankescobar/allure-docker-service-ui:7.0.3
+    depends_on:
+      - allure
+    environment:
+      - ALLURE_DOCKER_PUBLIC_API_URL=http://localhost:5050
+    ports:
+      - 5252:5252
+    networks:
+      - rococo-network
+
+volumes:
+  mysql_data:
+    name: mysql_data
+  allure-results:
+    external: true
+
+networks:
+  rococo-network:
+    driver: bridge
