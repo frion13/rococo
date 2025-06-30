@@ -1,24 +1,20 @@
--- Таблица пользователей
-CREATE TABLE IF NOT EXISTS `user` (
-    id BINARY(16) PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
-    password VARCHAR(100) NOT NULL,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    account_non_expired BOOLEAN NOT NULL DEFAULT TRUE,
-    account_non_locked BOOLEAN NOT NULL DEFAULT TRUE,
-    credentials_non_expired BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT uk_user_username UNIQUE (username)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create table if not exists `user`
+(
+    id                      binary(16)  unique not null default (UUID_TO_BIN(UUID(), true)),
+    username                varchar(50) unique not null,
+    password                varchar(255)       not null,
+    enabled                 boolean            not null,
+    account_non_expired     boolean            not null,
+    account_non_locked      boolean            not null,
+    credentials_non_expired boolean            not null,
+    primary key (id, username)
+);
 
--- Таблица прав доступа
-CREATE TABLE IF NOT EXISTS `authority` (
-    id BINARY(16) PRIMARY KEY DEFAULT (UUID_TO_BIN(UUID(), true)),
-    user_id BINARY(16) NOT NULL,
-    authority ENUM('READ', 'WRITE', 'ADMIN') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_authority_user FOREIGN KEY (user_id) 
-        REFERENCES `user` (id) ON DELETE CASCADE,
-    INDEX idx_authority_user (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+create table if not exists `authority`
+(
+    id        binary(16)  unique not null default (UUID_TO_BIN(UUID(), true)),
+    user_id   binary(16)         not null,
+    authority varchar(50)        not null,
+    primary key (id),
+    constraint fk_authorities_users foreign key (user_id) references `user` (id)
+);

@@ -1,0 +1,57 @@
+plugins {
+    id 'org.springframework.boot' version '3.3.2'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'com.google.cloud.tools.jib' version '3.4.1'
+    id 'com.github.edeandrea.xjc-generation' version '1.6'
+    id 'com.google.protobuf' version '0.9.4'
+}
+
+group = 'guru.qa'
+version = '2.1.1'
+
+dependencies {
+    implementation project(':rococo-grpc-common')
+
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation('org.springframework.boot:spring-boot-starter-web-services') {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+    }
+    implementation 'org.springframework.ws:spring-ws-core'
+    implementation 'org.springframework.data:spring-data-commons'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation "net.devh:grpc-client-spring-boot-starter:${project.ext.springGrpcVersion}"
+    implementation "org.springframework.cloud:spring-cloud-starter-vault-config:${project.ext.springVaultVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.ext.openApiVersion}"
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test:6.4.2'
+    testImplementation "org.wiremock:wiremock:${project.ext.wiremockVersion}"
+
+}
+
+
+sourceSets {
+    main {
+        java {
+            srcDir('src/main/java')
+            srcDir("$buildDir/generated-sources/main/xjc")
+        }
+    }
+}
+
+tasks.named('bootJar') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.register('printVersion') {
+    doLast {
+        println project.version
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
