@@ -3,8 +3,8 @@ plugins {
     id 'com.google.protobuf' version '0.9.4'
 }
 
-group = 'guru.qa'
-version = '1.0.2'
+group 'guru.qa'
+version '0.0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()

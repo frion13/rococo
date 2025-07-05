@@ -10,6 +10,7 @@ option java_outer_classname = "RococoArtistProto";
 
 service RococoArtistService {
   rpc GetArtist(ArtistRequest) returns (ArtistResponse);
+  rpc GetArtistByName(GetArtistRequest) returns (AllArtistResponse);
   rpc GetAllArtist(AllArtistRequest) returns (AllArtistResponse);
   rpc AddArtist(AddArtistRequest) returns (ArtistResponse);
   rpc UpdateArtist(UpdateArtistRequest) returns (ArtistResponse);
@@ -18,6 +19,10 @@ service RococoArtistService {
 
 message ArtistRequest {
   bytes id = 1;
+}
+
+message GetArtistRequest{
+  string name = 1;
 }
 
 message ArtistResponse {

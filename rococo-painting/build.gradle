@@ -22,11 +22,37 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-
-tasks.register('dockerRmi', Exec) {
-    workingDir "${buildDir}"
-    commandLine 'bash', '-c', "docker rmi -f \$(docker images | grep 'rococo')\n"
+jib {
+    container {
+        ports = ['8095']
+        jvmFlags = ["-Dspring.profiles.active=${System.env.PROFILE}"]
+        environment = [
+                'TZ': 'Europe/Moscow'
+        ]
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+        labels = [
+                'maintainer': 'tl',
+                'version'   : "${project.version}".toString()
+        ]
+    }
+    from {
+        image = "${project.ext.dockerImage}"
+        platforms {
+            platform {
+                architecture = "${project.ext.dockerArch}"
+                os = 'linux'
+            }
+        }
+    }
+    to {
+        image = "${project.ext.dockerHubName}/${project.name}-docker"
+        tags = ['latest', "${project.version}"]
+    }
 }
+
+tasks.jib.dependsOn test
+tasks.jibDockerBuild.dependsOn test
+
 
 tasks.named('test') {
     useJUnitPlatform()

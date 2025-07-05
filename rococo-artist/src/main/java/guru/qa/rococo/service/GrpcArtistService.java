@@ -1,8 +1,10 @@
 package guru.qa.rococo.service;
 
+import com.google.protobuf.ByteString;
 import guru.qa.grpc.rococo.grpc.*;
 import guru.qa.rococo.data.ArtistEntity;
 import guru.qa.rococo.data.repository.ArtistRepository;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.data.domain.Page;
@@ -24,6 +26,47 @@ public class GrpcArtistService extends RococoArtistServiceGrpc.RococoArtistServi
     public GrpcArtistService(ArtistRepository artistRepository) {
         this.artistRepository = artistRepository;
     }
+
+    @Override
+    public void getArtistByName(GetArtistRequest request,
+                                StreamObserver<AllArtistResponse> responseObserver) {
+        try {
+            if (request.getName().isBlank()) {
+                responseObserver.onError(Status.INVALID_ARGUMENT
+                        .withDescription("Artist name cannot be empty")
+                        .asRuntimeException());
+                return;
+            }
+            Page<ArtistEntity> artistPage = artistRepository.findAllByNameContainsIgnoreCase(
+                    request.getName(),
+                    PageRequest.of(0, 10)
+            );
+
+            AllArtistResponse.Builder responseBuilder = AllArtistResponse.newBuilder()
+                    .setTotalCount((int) artistPage.getTotalElements());
+
+            artistPage.getContent().forEach(artist ->
+                    responseBuilder.addArtists(convertToArtistResponse(artist))
+            );
+            responseObserver.onNext(responseBuilder.build());
+            responseObserver.onCompleted();
+
+        } catch (Exception e) {
+            responseObserver.onError(Status.INTERNAL
+                    .withDescription("Error searching artist: " + e.getMessage())
+                    .asRuntimeException());
+        }
+    }
+
+    private ArtistResponse convertToArtistResponse(ArtistEntity entity) {
+        return ArtistResponse.newBuilder()
+                .setId(ByteString.copyFrom(entity.getId().toString().getBytes()))
+                .setName(entity.getName())
+                .setBiography(entity.getBiography())
+                .setPhoto(ByteString.copyFrom(entity.getPhoto()))
+                .build();
+    }
+
 
     @Override
     public void getArtist(ArtistRequest request, StreamObserver<ArtistResponse> responseObserver) {
