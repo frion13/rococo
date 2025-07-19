@@ -128,9 +128,3 @@ jobs:
             const message = exitCode == '0' ?
               `✅ E2E TEST RUN PASSED\nThere is the [report](${reportUrl})\nAll reports [history](${historyUrl})` :
               `🔴 E2E TEST RUN FAILED\nThere is the [report](${reportUrl})\nAll reports [history](${historyUrl})`
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            })
