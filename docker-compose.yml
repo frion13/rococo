@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   rococo-all-db:
     container_name: rococo-all-db
@@ -267,7 +269,6 @@ volumes:
   mysql_data:
     name: mysql_data
   allure-results:
-    external: true
 
 networks:
   rococo-network:
