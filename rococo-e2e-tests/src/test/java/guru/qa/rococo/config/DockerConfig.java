@@ -17,25 +17,24 @@ public class DockerConfig implements Config {
     @Nonnull
     @Override
     public String authUrl() {
-        return "http://auth.niffler.dc:9000/";
+        return "http://auth.rococo.dc:9000/";
     }
 
     @Nonnull
     @Override
     public String authJdbcUrl() {
-        return "jdbc:postgresql://niffler-all-db:5432/niffler-auth";
+        return "rococo-all-db:3306/rococo-userdata";
     }
 
 
     @Nonnull
     @Override
     public String userdataJdbcUrl() {
-        return "jdbc:postgresql://niffler-all-db:5432/niffler-userdata";
+        return "rococo-all-db:3306/rococo-userdata";
     }
-
     @Override
     public String userdataGrpcAddress() {
-        return "";
+        return "userdata.rococo.dc";
     }
 
     @Override

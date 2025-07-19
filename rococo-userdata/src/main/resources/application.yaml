@@ -66,5 +66,6 @@ spring:
     url: 'jdbc:mysql://rococo-all-db:3306/rococo-userdata?serverTimezone=UTC&createDatabaseIfNotExist=true'
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
+
 ---

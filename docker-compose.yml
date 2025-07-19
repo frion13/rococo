@@ -119,7 +119,7 @@ services:
     image: ${PREFIX}/rococo-painting-docker:latest
     pull_policy: always
     ports:
-      - 9095:9095
+      - 8095:8095
     restart: always
     depends_on:
       auth.rococo.dc:
