@@ -25,22 +25,27 @@ jobs:
       FRONT_VERSION: 0.0.1
       DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
       DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: ${{ env.GITHUB_SHA }}
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
+
       - name: Grant execute permission to gradlew
         run: chmod +x gradlew
+
       - name: Build backends
         id: build
         run: |
           ./gradlew jibDockerBuild -x :rococo-e2e-tests:test
+
       - name: Report test results
         uses: dorny/test-reporter@v2
         if: always() && steps.build.outcome != 'skipped'
@@ -49,6 +54,7 @@ jobs:
           path: '**/build/test-results/test/TEST-*.xml'
           reporter: java-junit
           badge-title: 'unit & contract tests'
+
       - name: Add comment to PR with link to unit tests results
         if: always() && steps.build.outcome != 'skipped'
         uses: actions/github-script@v7
@@ -58,31 +64,38 @@ jobs:
             const message = buildStatus === 'success'
               ? `✅ UNIT & INTEGRATION TESTS PASSED`
               : `🔴 UNIT & INTEGRATION TESTS FAILED`
+
       - name: Pull Chrome 127
         run: |
           docker pull selenoid/vnc_chrome:127.0
+
       - name: Get the last commit message
         run: |
           echo "HEAD_COMMIT_MESSAGE=$(git show -s --format=%s)" >> $GITHUB_ENV
+
       - name: Create Docker volume
         run: docker volume create allure-results
+
       - name: Run infrastructure
         run: |
           docker compose up -d rococo-all-db zookeeper kafka
           echo "### Waiting for DB to be ready ###"
           timeout 120 bash -c 'until docker exec rococo-all-db mysqladmin ping -uroot -psecret --silent; do echo "Waiting for MySQL..."; sleep 5; done'
           echo "### Waiting for Kafka to be ready ###"
-          timeout 120 bash -c 'until docker exec kafka kafka-broker-api-versions --bootstrap-server kafka:9092; do echo "Waiting for Kafka..."; sleep 5; done'
+          timeout 120 bash -c 'until docker exec kafka kafka-topics --bootstrap-server kafka:9092 --list >/dev/null 2>&1; do echo "Waiting for Kafka..."; sleep 5; done'
+
       - name: Start services
         run: |
           docker compose up -d
           echo "### Waiting for services to be healthy ###"
           timeout 120 bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} userdata.rococo.dc)" == "healthy" ]; do echo "Waiting for Userdata..."; sleep 5; done'
           timeout 120 bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} auth.rococo.dc)" == "healthy" ]; do echo "Waiting for Auth..."; sleep 5; done'
+
       - name: Check service status
         run: |
           echo "### Current container status ###"
           docker ps -a
+
       - name: Run e2e tests
         id: e2e
         run: |
@@ -103,7 +116,7 @@ jobs:
       - name: Dump auth container logs on failure
         if: failure()
         run: docker compose logs auth.rococo.dc
-          
+
       - name: Add comment to PR with link to allure
         if: always() && steps.e2e.outcome != 'skipped'
         uses: actions/github-script@v7
@@ -121,7 +134,3 @@ jobs:
               repo: context.repo.repo,
               body: message
             })
-
-
-
-
