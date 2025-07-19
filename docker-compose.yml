@@ -136,14 +136,14 @@ services:
       - 8091:8091
     restart: always
     healthcheck:
-      #test: "wget --spider http://localhost:9090/actuator/health || exit 1"
-      test: ["CMD-SHELL", "curl -f http://localhost:9090/actuator/health || exit 1"]
-      #interval: 5s
-      #timeout: 5s
-      #retries: 10
-      interval: 10s
-      timeout: 10s
-      retries: 15
+      test: "wget --spider http://localhost:8091/actuator/health || exit 1"
+      # test: ["CMD-SHELL", "curl -f http://localhost:8091/actuator/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      # interval: 10s
+      # timeout: 10s
+      # retries: 15
     depends_on:
       auth.rococo.dc:
         condition: service_healthy
