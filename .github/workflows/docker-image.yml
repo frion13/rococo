@@ -60,12 +60,7 @@ jobs:
             const message = buildStatus === 'success'
               ? `✅ UNIT & INTEGRATION TESTS PASSED`
               : `🔴 UNIT & INTEGRATION TESTS FAILED`
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            })
+            
 
       - name: Pull Chrome 127
         run: docker pull selenoid/vnc_chrome:127.0
@@ -125,12 +120,7 @@ jobs:
             const message = exitCode === '0'
               ? `✅ E2E TEST RUN PASSED\n[Report](${reportUrl})\n[History](${historyUrl})`
               : `🔴 E2E TEST RUN FAILED\n[Report](${reportUrl})\n[History](${historyUrl})`
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            })
+            
 
       - name: Fail job if e2e tests failed
         if: ${{ steps.e2e.outputs.E2E_EXIT_CODE != '0' }}
