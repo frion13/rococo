@@ -99,6 +99,11 @@ jobs:
             echo "Tests failed!"
             exit 1
           fi
+
+      - name: Dump auth container logs on failure
+        if: failure()
+        run: docker compose logs auth.rococo.dc
+          
       - name: Add comment to PR with link to allure
         if: always() && steps.e2e.outcome != 'skipped'
         uses: actions/github-script@v7
