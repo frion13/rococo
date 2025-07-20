@@ -1,5 +1,5 @@
 # Rococo - платформа для изучения искусства
-<img src="rococo.png" width="200" alt="Rococo Logo">
+<img src="rococo.png" width="1000" alt="Rococo Logo">
 
 **Микросервисная платформа для работы с произведениями искусства**
 
