@@ -2,36 +2,55 @@
 set -e
 set -x
 
-echo '### Java version ###'
-java --version
-echo '### Gradle version ###'
-gradle --version
+# Load environment variables from docker.properties file
+source ./docker.properties
 
-front="./rococo-client/"
-front_image="tatianalomanovskaya/rococo-client:latest"
+# Set deployment configuration
+export PROFILE=docker
+export PREFIX="${IMAGE_PREFIX}"
+export ARCH=$(uname -m)
+export FRONT_VERSION="1.0.0"
 
-export FRONT_IMAGE="$front_image"
+# Pull base infrastructure images
+docker-compose pull rococo-all-db zookeeper kafka
 
 echo "### Stopping and removing containers ###"
 docker compose down || true
 
-echo "### Removing old containers ###"
-docker ps -a --filter "name=rococo" --format "{{.ID}}" | xargs -r docker rm -f || true
+# Build mode selection
+if [ "$1" = "push" ] || [ "$2" = "push" ]; then
+  echo "### Building and pushing images ###"
+  bash ./gradlew jib -x :rococo-e2e-tests:build
+  docker compose push frontend.rococo.dc
+else
+  echo "### Local image building ###"
+  bash ./gradlew jibDockerBuild -x :rococo-e2e-tests:build
+fi
 
-echo "### Removing old images ###"
-docker images --format "{{.Repository}}:{{.Tag}}" | grep "rococo" | xargs -r docker rmi || true
+echo "### Starting DB, Kafka ###"
+docker-compose up -d rococo-all-db zookeeper kafka
+sleep 10
 
-echo "### Building backend ###"
-./gradlew clean build jibDockerBuild -x :rococo-e2e-tests:test
+echo "### Verify Docker images exist ###"
+for service in auth artist museum painting userdata gateway; do
+  if ! docker inspect "${PREFIX}/rococo-${service}-${PROFILE}:latest" >/dev/null 2>&1; then
+    echo "Error: Image ${PREFIX}/rococo-${service}-${PROFILE}:latest not found!"
+    exit 1
+  fi
+done
 
-echo "### Building frontend ###"
-cd "$front" || exit
-npm install && npm run build
-docker build -t "$front_image" .
-cd ..
+echo "### Start ###"
+docker-compose up -d || {
+  echo "### error ###"
+  docker-compose logs
+  exit 1
+}
 
-echo "### Starting services ###"
-docker compose up -d --build
+echo "### status ###"
+docker-compose ps
 
-echo "### Service status ###"
-docker compose ps
+echo "### logs###"
+docker-compose ps --filter "status=exited" --format "{{.Names}}" | while read -r container; do
+  echo "=== Логи $container ==="
+  docker logs "$container" || echo "Can'n get logs for $container"
+done

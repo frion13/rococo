@@ -42,7 +42,7 @@ public class LocalConfig implements Config {
 
     @Override
     public String artistGrpcAddress() {
-        return "127.0.0.1";
+        return "localhost";
     }
 
     @Override

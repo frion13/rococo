@@ -3,7 +3,7 @@
 docker stop $(docker ps -a -q)
 docker rm $(docker ps -a -q)
 
-docker run --name rococo-all -p 3306:3306 -e MYSQL_ROOT_PASSWORD=secret -d mysql:8.0.33
+docker run --name rococo-all -p 3306:3306 -e MYSQL_ROOT_PASSWORD=secret -d mysql:8.3
 
 docker run --name=zookeeper -e ZOOKEEPER_CLIENT_PORT=2181 -p 2181:2181 -d confluentinc/cp-zookeeper:7.3.2
 docker run --name=kafka -e KAFKA_BROKER_ID=1 \

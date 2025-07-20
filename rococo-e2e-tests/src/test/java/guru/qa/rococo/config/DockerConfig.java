@@ -11,7 +11,7 @@ public class DockerConfig implements Config {
     @Nonnull
     @Override
     public String frontUrl() {
-        return "http://client.rococo.dc";
+         return "http://frontend.rococo.dc/";
     }
 
     @Nonnull

@@ -9,4 +9,4 @@ COPY ./gradlew ./
 COPY ./build.gradle ./
 COPY ./settings.gradle ./
 
-CMD ./gradlew test -Dtest.env=docker -Dbrowser=${BROWSER}
+CMD ./gradlew test -Dtest.env=docker -Duser.timezone=Europe/Moscow -Dbrowser=${BROWSER:-chrome}

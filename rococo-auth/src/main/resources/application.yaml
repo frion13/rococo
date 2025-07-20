@@ -82,7 +82,7 @@ spring:
     hibernate:
       ddl-auto: validate
 rococo-front:
-  base-uri: 'http://client.rococo.dc'
+  base-uri: 'http://frontend.rococo.dc/'
 rococo-auth:
   base-uri: 'http://auth.rococo.dc:9000'
 ---
