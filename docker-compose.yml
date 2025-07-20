@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   rococo-all-db:
     container_name: rococo-all-db
@@ -57,8 +59,9 @@ services:
     container_name: auth.rococo.dc
     image: ${PREFIX}/rococo-auth-docker:latest
     pull_policy: always
-    ports:
-      - 9000:9000
+    environment:
+      - OAUTH2_CLIENT_ID=${OAUTH2_CLIENT_ID:-dummy-client-id}
+      - OAUTH2_CLIENT_SECRET=${OAUTH2_CLIENT_SECRET:-dummy-client-secret}
     healthcheck:
       test: "wget --spider http://localhost:9000/actuator/health || exit 1"
       interval: 10s
@@ -128,15 +131,19 @@ services:
   userdata.rococo.dc:
     container_name: userdata.rococo.dc
     image: ${PREFIX}/rococo-userdata-docker:latest
-    pull_policy: always
+    # pull_policy: always
     ports:
       - 8091:8091
     restart: always
     healthcheck:
-      test: "wget --spider http://localhost:9090/actuator/health || exit 1"
+      test: "wget --spider http://localhost:8091/actuator/health || exit 1"
+      # test: ["CMD-SHELL", "curl -f http://localhost:8091/actuator/health || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 10
+      # interval: 10s
+      # timeout: 10s
+      # retries: 15
     depends_on:
       auth.rococo.dc:
         condition: service_healthy
@@ -205,8 +212,7 @@ services:
       - rococo-network
 
   selenoid:
-    profiles:
-      - test
+    profiles: [ test ]
     container_name: selenoid
     image: aerokube/selenoid:1.11.3
     platform: linux/${ARCH}
@@ -223,8 +229,7 @@ services:
       - rococo-network
 
   selenoid-ui:
-    profiles:
-      - test
+    profiles: [ test ]
     container_name: selenoid-ui
     image: aerokube/selenoid-ui:1.10.11
     depends_on:
@@ -247,6 +252,7 @@ services:
       - allure-results:/app/allure-results
     ports:
       - 5050:5050
+    restart: always
     networks:
       - rococo-network
 
@@ -260,14 +266,13 @@ services:
       - ALLURE_DOCKER_PUBLIC_API_URL=http://localhost:5050
     ports:
       - 5252:5252
+    restart: always
     networks:
       - rococo-network
 
 volumes:
   mysql_data:
-    name: mysql_data
   allure-results:
-    external: true
 
 networks:
   rococo-network:
