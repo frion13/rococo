@@ -22,7 +22,7 @@
   - Spring Kafka
   - Spring gRPC
 - **Базы данных**:
-  - MySQL 8.0 (основная БД)
+  - MySQL 8.3 (основная БД)
   - Flyway (миграции)
 - **Межсервисное взаимодействие**:
   - gRPC для
@@ -123,6 +123,101 @@
 
 Для обеспечения слабосвязанности компонентов система использует Kafka, которая обрабатывает асинхронные события, такие как обновление профилей пользователей или изменение коллекций музеев. Это позволяет масштабировать отдельные сервисы независимо и гарантирует отказоустойчивость платформы.
 
+
+# Минимальные предусловия для работы с проектом Rococo
+
+- На Windows рекомендуется используется терминал bash
+- Установить Docker Desktop
+- Установить Java версии 21
+- Установить пакетный менеджер для сборки front-end npm <br>
+  [Инструкция](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+- Спуллить контейнер mysql:8.3, zookeeper и kafka версии 7.3.2
+```posh
+$ docker pull mysql:8.3
+$ docker pull confluentinc/cp-zookeeper:7.3.2
+$ docker pull confluentinc/cp-kafka:7.3.2
+```
+
+
+
+После `pull` вы увидите спуленный image командой `docker images`
+
+```posh
+mitriis-MacBook-Pro ~ % docker images            
+REPOSITORY                 TAG              IMAGE ID       CREATED         SIZE
+postgres                   15.1             9f3ec01f884d   10 days ago     379MB
+confluentinc/cp-kafka      7.3.2            db97697f6e28   12 months ago   457MB
+confluentinc/cp-zookeeper  7.3.2            6fe5551964f5   7 years ago     451MB
+
+```
+
+#### 3. Создать volume для сохранения данных из БД в docker на вашем компьютере
+
+```posh
+docker volume create pgdata
+```
+
+#### Создать volume для сохранения данных из БД в docker на вашем компьютере
+```posh
+docker volume create rococo-mysql
+```
+
+
+
+#### 4. Запустить БД, zookeeper и kafka, фронт скриптоп bash localenv.sh
+
+```posh
+User-MacBook-Pro  niffler % bash localenv.sh
+```
+
+Фронт будет на порту 3000: http://127.0.0.1:3000/ 
+
+#### 5. Прописать run конфигурацию для всех сервисов rococo-* - Active profiles local
+
+Для этого зайти в меню Run -> Edit Configurations -> выбрать main класс -> в поле Environment variables указать
+spring.profiles.active=local
+
+#### 5. Запустить сервис rococo-auth c помощью gradle или командой Run в IDE:
+
+```posh
+$ cd rococo-auth
+$ gradle bootRun --args='--spring.profiles.active=local'
+```
+
+#### 4. Запустить в любой последовательности другие сервисы: rococo-gateway, rococo-userdata, rococo-artist, rococo-geo, rococo-museum, rococo-painting
+
+
+<a name="запуск_в_docker"></a>
+Для запуска в Docker:
+
+### Прописать алиасы в  etc/hosts:
+
+```posh
+127.0.0.1 localhost
+127.0.0.1 frontend.rococo.dc
+127.0.0.1 auth.rococo.dc
+127.0.0.1 rococo-all-db
+127.0.0.1 gateway.rococo.dc
+127.0.0.1 museum.rococo.dc
+127.0.0.1 artist.rococo.dc
+127.0.0.1 painting.rococo.dc
+127.0.0.1 userdata.rococo.dc
+127.0.0.1 allure
+```
+
+#### Команда для развертывания:
+
+```bash
+bash docker-compose.sh
+```
+#### Команда для развертывания с автотестами:
+
+```bash
+bash docker-compose-e2e.sh
+```
+
+# Пример тестового отчета
+<img src="report.png" alt="Allure Overview">
 
 
 
